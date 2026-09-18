@@ -1,0 +1,31 @@
+{
+  "sources": [
+    {
+      "name": "replace-with-source-name",
+      "enabled": false,
+      "endpoint": "https://api.example.invalid/events",
+      "terms_url": "https://example.invalid/terms",
+      "documentation_url": "https://example.invalid/api-docs",
+      "terms_reviewed": false,
+      "api_key_env": "BERLIN_EVENTS_API_KEY",
+      "api_key_header": "Authorization",
+      "api_key_prefix": "Bearer ",
+      "events_path": "data.events",
+      "request_headers": {
+        "Accept": "application/json"
+      },
+      "query": {},
+      "fields": {
+        "source_id": "id",
+        "title": "title",
+        "start": "start_at",
+        "end": "end_at",
+        "venue": "venue.name",
+        "address": "venue.address",
+        "city": "venue.city",
+        "url": "url",
+        "description": "description"
+      }
+    }
+  ]
+}
