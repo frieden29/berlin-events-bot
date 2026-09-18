@@ -8,6 +8,7 @@ version = "0.1.0"
 description = "Validated, deduplicated Berlin event collection pipeline"
 readme = "README.md"
 requires-python = ">=3.11"
+dependencies = ["tzdata>=2024.1; sys_platform == 'win32'"]
 license = { text = "MIT" }
 
 [project.scripts]
@@ -19,4 +20,3 @@ where = ["src"]
 [tool.pytest.ini_options]
 pythonpath = ["src"]
 testpaths = ["tests"]
-

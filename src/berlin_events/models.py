@@ -24,6 +24,8 @@ class Event:
     url: str | None = None
     description: str | None = None
     source_refs: list[SourceRef] = field(default_factory=list)
+    latitude: float | None = None
+    longitude: float | None = None
 
     def to_dict(self) -> dict[str, Any]:
         value = asdict(self)
@@ -33,4 +35,3 @@ class Event:
     @property
     def parsed_start(self) -> datetime:
         return datetime.fromisoformat(self.start.replace("Z", "+00:00"))
-

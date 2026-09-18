@@ -10,7 +10,7 @@ from .pipeline import collect, load_config, write_events
 def main() -> int:
     parser = argparse.ArgumentParser(description="Collect validated Berlin events")
     parser.add_argument("--config", type=Path, default=Path("config/sources.json"))
-    parser.add_argument("--output", type=Path, default=Path("data/events.json"))
+    parser.add_argument("--output", type=Path, default=Path("runtime/events.json"))
     args = parser.parse_args()
     try:
         events, rejected = collect(load_config(args.config))
@@ -26,4 +26,3 @@ def main() -> int:
 
 if __name__ == "__main__":
     raise SystemExit(main())
-

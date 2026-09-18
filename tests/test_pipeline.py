@@ -8,7 +8,7 @@ from berlin_events.pipeline import collect, load_config, write_events
 
 class PipelineTests(unittest.TestCase):
     def test_default_config_collects_no_fabricated_events(self):
-        config = load_config(Path(__file__).parents[1] / "config" / "sources.json")
+        config = {"sources": []}
         events, rejected = collect(config)
         self.assertEqual(events, [])
         self.assertEqual(rejected, [])

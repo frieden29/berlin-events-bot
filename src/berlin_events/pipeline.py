@@ -8,6 +8,7 @@ from typing import Any
 from .deduplication import deduplicate
 from .models import Event
 from .sources import JsonApiSource
+from .ticketmaster import TicketmasterSource
 
 
 def load_config(path: Path) -> dict[str, Any]:
@@ -29,7 +30,8 @@ def collect(config: dict[str, Any]) -> tuple[list[Event], list[str]]:
             raise ValueError(f"{name}: terms_reviewed must be true before enabling the source")
         if not source_config.get("terms_url") or not source_config.get("documentation_url"):
             raise ValueError(f"{name}: terms_url and documentation_url are required")
-        result = JsonApiSource(source_config).collect()
+        adapter = TicketmasterSource if source_config.get("type") == "ticketmaster" else JsonApiSource
+        result = adapter(source_config).collect()
         events.extend(result.events)
         rejected.extend(result.rejected)
     return deduplicate(events), rejected

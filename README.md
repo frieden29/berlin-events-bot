@@ -4,9 +4,8 @@ A small Python pipeline that collects Berlin events from explicitly approved API
 rejects incomplete records, deduplicates them, and writes stable JSON for consumers
 such as TaxiSpot Berlin.
 
-The repository deliberately ships with **no live event source enabled**. No events
-are invented, and a source should only be added to `config/sources.json` after its
-API documentation and terms of use have been reviewed.
+Ticketmaster Discovery v2 is configured in `config/sources.json`. Its key must be
+provided through the environment. Tests use synthetic records and mocked HTTP only.
 
 ## Requirements
 
@@ -22,13 +21,13 @@ python -m venv .venv
 # Linux/macOS: source .venv/bin/activate
 python -m pip install -e .
 python -m unittest discover -s tests -v
-python -m berlin_events --config config/sources.json --output data/events.json
+python -m berlin_events --config config/sources.json --output runtime/events.json
 ```
 
-With the default empty configuration, the command safely writes an empty event
-collection. It does not contact the internet.
+Without `BERLIN_EVENTS_API_KEY`, collection fails before contacting the API.
+Windows installations include `tzdata` for `Europe/Berlin` timezone conversion.
 
-## Adding the first API
+## Adding other APIs
 
 Copy the object in `config/sources.example.json` into the `sources` array in
 `config/sources.json`, then replace every placeholder using the API's official
@@ -61,7 +60,9 @@ value.
 
 ## Output contract
 
-`data/events.json` contains a UTC generation timestamp, count, and an `events` array.
+`runtime/events.json` contains a UTC generation timestamp, count, and an `events` array.
+Events include optional `latitude` and `longitude`. `runtime/` is ignored by Git;
+`data/events.json` remains an empty placeholder, not the live output.
 A collection failure exits non-zero before writing the output. Invalid individual
 records are rejected and summarized on standard error.
 
@@ -73,10 +74,47 @@ also be started manually. To use it:
 1. Create a Git repository inside this folder and commit the files.
 2. Create an empty GitHub repository and add it as `origin`; this project does not
    assume one already exists.
-3. Configure the source and add its API-key secret, if applicable.
-4. Push the default branch and grant Actions **Read and write permissions** under
-   repository Settings → Actions → General → Workflow permissions.
+3. Add the repository Actions secret `BERLIN_EVENTS_API_KEY`.
+4. Push the default branch. The workflow only needs read access to repository contents.
 
-The workflow tests first, updates the JSON, and commits only when the file changed.
+The workflow tests first, collects JSON, and uploads a `berlin-events` artifact with
+one-day retention. Live content is never committed to permanent Git history.
 GitHub cron schedules may be delayed during load; six hours is the requested cadence,
 not a real-time guarantee.
+
+## Ticketmaster specifics and terms review (2026-09-18)
+
+Official documentation: https://developer.ticketmaster.com/products-and-docs/apis/discovery-api/v2/
+
+Terms: https://developer.ticketmaster.com/support/terms-of-use/
+
+GET `https://app.ticketmaster.com/discovery/v2/events.json` uses `city=Berlin`,
+`countryCode=DE`, and the runtime **query parameter `apikey`**, not Bearer auth.
+The workflow maps `secrets.BERLIN_EVENTS_API_KEY` to that environment variable.
+The generic `sources.example.json` is for other APIs; its header auth is not used
+by the dedicated Ticketmaster adapter.
+
+Mapping: `id`, `name`, `url`, `dates.start.dateTime`, and `_embedded.venues[0]`
+(name/address/city/country/location). Times are converted to Europe/Berlin, preserving
+the local calendar date. Explicit localDate/localTime/timezone can be used if UTC
+is absent; ambiguous/nonexistent DST times, missing places, TBA/TBD, unspecified
+times, cancelled/postponed events and conflicting dates are rejected.
+
+Default published limits are 5,000 calls/day and 5 calls/second, with deep paging
+restricted to `size * page < 1000`. The collector uses at most five 200-event pages,
+one second apart (at most 20 calls/day at the configured schedule). It stops on 429
+or exhausted response quota without retrying. Account-wide usage by other apps or
+manual runs counts too. More than 1,000 results fails explicitly, preserving the old
+output; narrow the `startDateTime`/`endDateTime` query range if necessary.
+
+Terms restrict caching to reasonable service periods and require removal within
+24 hours of an owner's request. They also restrict revenue-generating API use:
+commercial TaxiSpot use needs confirmation of applicable Ticketmaster permission.
+`terms_reviewed` records a technical review, not commercial permission. Keep source
+attribution and event links in consumers and do not replicate the ticketing service.
+
+Local snapshots must be deleted within 24 hours, including stale files after failed
+refreshes. Honor removal requests by deleting affected artifacts and downstream
+copies promptly. Artifact expiry alone does not handle removal requests. Never
+commit live snapshots or API keys. Redirects are refused and request errors omit
+credential-bearing URLs, raw response bodies and underlying exception text.

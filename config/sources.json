@@ -1,4 +1,13 @@
 {
-  "sources": []
+  "sources": [{
+    "name": "ticketmaster",
+    "type": "ticketmaster",
+    "enabled": true,
+    "endpoint": "https://app.ticketmaster.com/discovery/v2/events.json",
+    "api_key_env": "BERLIN_EVENTS_API_KEY",
+    "terms_url": "https://developer.ticketmaster.com/support/terms-of-use/",
+    "documentation_url": "https://developer.ticketmaster.com/products-and-docs/apis/discovery-api/v2/",
+    "terms_reviewed": true,
+    "query": {"city": "Berlin", "countryCode": "DE", "size": 200, "sort": "date,asc", "includeTBA": "no", "includeTBD": "no", "includeTest": "no"}
+  }]
 }
-

@@ -6,7 +6,7 @@ on:
   workflow_dispatch:
 
 permissions:
-  contents: write
+  contents: read
 
 concurrency:
   group: update-berlin-events
@@ -28,18 +28,13 @@ jobs:
       - name: Run tests
         run: python -m unittest discover -s tests -v
       - name: Collect events
-        # Add required API secrets here after configuring an approved source, e.g.:
-        # env:
-        #   BERLIN_EVENTS_API_KEY: ${{ secrets.BERLIN_EVENTS_API_KEY }}
-        run: python -m berlin_events --config config/sources.json --output data/events.json
-      - name: Commit changed data
-        run: |
-          if git diff --quiet -- data/events.json; then
-            echo "No event changes"
-            exit 0
-          fi
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add data/events.json
-          git commit -m "chore: update Berlin events"
-          git push
+        env:
+          BERLIN_EVENTS_API_KEY: ${{ secrets.BERLIN_EVENTS_API_KEY }}
+        run: python -m berlin_events --config config/sources.json --output runtime/events.json
+      - name: Store short-lived event snapshot
+        uses: actions/upload-artifact@v4
+        with:
+          name: berlin-events
+          path: runtime/events.json
+          retention-days: 1
+          if-no-files-found: error
